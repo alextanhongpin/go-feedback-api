@@ -1,5 +1,14 @@
-# go-feedback
+# go-feedback-api
 
-:love_letter: A simple feedback API that stores feedbacks and send the feedbacks in batches to the subscribers.
+:love_letter: You have a feedback form on your website and wants the feedback sent to be delivered to your email, in a convenient way.
 
-...is what I thought I will build. But we couldn't manage to host our own server. So this API will send the email to the admin instead.
+
+What if I told you that...
+
+    There is an API for that.
+
+With this line, this api is under your command...
+
+```bash
+$ go run main.go -username YOUR_GMAIL_EMAIL -password YOUR_GMAIL_PASSWORD -to EMAIL_YOU_WANT_TO_SEND_TO
+```

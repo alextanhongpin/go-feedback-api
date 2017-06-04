@@ -13,9 +13,9 @@ import (
 
 const Version string = "0.0.1"
 
-// Email is the payload that is sent from the body
+// Email represents the request body
 type Email struct {
-	Body    string `json:"Body"`
+	Body    string `json:"body"`
 	From    string `json:"from"`
 	To      string `json:"to"`
 	Subject string `json:"subject"`
@@ -29,17 +29,16 @@ func main() {
 	)
 	flag.Parse()
 
-	u := *username
-	p := *password
 	t := *to
 
-	http.HandleFunc("/api/v1/feedbacks", createHandler(u, p, t))
+	auth := MakeGoogleSmtp(*username, *password)
+	http.HandleFunc("/api/v1/feedbacks", createHandler(auth, t))
 
 	log.Println("listening to port *:8080. press ctrl + c to cancel.")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
-func createHandler(username, password, to string) http.HandlerFunc {
+func createHandler(auth smtp.Auth, to string) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			var email Email
@@ -49,10 +48,10 @@ func createHandler(username, password, to string) http.HandlerFunc {
 				return
 			}
 
-			// Override the recipient to be only you
+			// Override the recipient so that only one person receives the email
 			email.To = to
 
-			err = SendEmail(username, password, email)
+			err = SendEmail(auth, email)
 			if err != nil {
 				panic(err)
 				return
@@ -66,6 +65,7 @@ func createHandler(username, password, to string) http.HandlerFunc {
 	})
 }
 
+// Create a smtp for Google
 func MakeGoogleSmtp(username, password string) smtp.Auth {
 	return smtp.PlainAuth(
 		"",               // identity
@@ -75,7 +75,8 @@ func MakeGoogleSmtp(username, password string) smtp.Auth {
 	)
 }
 
-func SendEmail(username string, password string, email Email) error {
+// SendEmail (duh) sends an email
+func SendEmail(auth smtp.Auth, email Email) error {
 	var buff bytes.Buffer
 	t := template.Must(template.ParseFiles("template/feedback.html"))
 
@@ -93,7 +94,7 @@ func SendEmail(username string, password string, email Email) error {
 
 	err = smtp.SendMail(
 		"smtp.gmail.com:587",
-		MakeGoogleSmtp(username, password),
+		auth,
 		"test@engineersmy", // from
 		[]string{email.To}, // to
 		[]byte(msg),        // body
@@ -103,6 +104,7 @@ func SendEmail(username string, password string, email Email) error {
 		log.Print("Error: attempting to send a mail", err)
 		return err
 	}
+
 	log.Print("Successfully sent email")
 	return nil
 }
